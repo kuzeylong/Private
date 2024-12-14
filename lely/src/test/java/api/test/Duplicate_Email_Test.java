@@ -19,39 +19,45 @@ public class Duplicate_Email_Test {
 
     @BeforeClass
     public void setupData() {
+        // Initialize Faker library for generating random test data
         faker = new Faker();
         userPayload = new UserData();
 
-        // Generate random user data
-        userPayload.setName(faker.name().firstName());
-        userPayload.setEmail(faker.internet().safeEmailAddress());
-        userPayload.setGender(faker.options().option("male", "female"));
-        userPayload.setStatus(faker.options().option("active", "inactive"));
+        // Generate random user data for testing
+        userPayload.setName(faker.name().firstName()); // Generate a random first name
+        userPayload.setEmail(faker.internet().safeEmailAddress()); // Generate a random safe email address
+        userPayload.setGender(faker.options().option("male", "female")); // Randomly assign male or female
+        userPayload.setStatus(faker.options().option("active", "inactive")); // Randomly set status as active or inactive
     }
 
     @Test
     public void testDuplicateEmailValidation() {
-        // Step 1: Create user with unique email
+        // Send a POST request to create a new user
         Response firstResponse = UserEndPoint.createUser(userPayload);
+
+        // Log the details of the first response for debugging
         firstResponse.then().log().all();
 
-        // Verify that the user is created successfully
+        // Validate that the first user creation request was successful
         firstResponse.then().statusCode(201)
-                .body("data.email", equalTo(userPayload.getEmail()));
+                .body("data.email", equalTo(userPayload.getEmail())); // Verify the email in the response matches the payload
 
-        // Step 2: Attempt to create user again with the same email
+        // Attempt to create a user with the same email (duplicate email)
         Response duplicateResponse = UserEndPoint.createUser(userPayload);
+
+        // Log the details of the duplicate response for debugging
         duplicateResponse.then().log().all();
 
-        // Verify that the user is not created and appropriate error is returned
-        duplicateResponse.then().statusCode(422); // 422 Unprocessable Entity
+        // Validate that the duplicate email request fails with a 422 status code
+        duplicateResponse.then().statusCode(422); 
 
-        // Extract and log the error message
+        // Extract the error message from the response body
         String errorMessage = duplicateResponse.jsonPath().getString("data.message[0]");
-        System.err.println("Error Message: " + errorMessage);
+        System.err.println("Error Message: " + errorMessage); // Print the error message to the console for reference
 
-        // Assert that the error message mentions the duplicate email
+        // Assert that the error message indicates a duplicate email issue
         assertThat("Error message should indicate duplicate email", errorMessage, containsString("has already been taken"));
     }
 }
+
 
